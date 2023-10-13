@@ -65,4 +65,33 @@ export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
   return createElement(type, key, ref, props)
 }
 
-export const jsxDEV = jsx
+export const jsxDEV = (
+  type: ElementType,
+  config: any,
+) => {
+  let key: Key = null
+  const props: Props = {}
+  let ref: Ref = null
+
+  // 处理 props  ** key ref
+  for (const prop in config) {
+    const val = config[prop]
+    if (prop === "key") {
+      if (val !== undefined) {
+        key = "" + val
+      }
+      continue
+    }
+    if (prop === "ref") {
+      if (val !== undefined) {
+        ref = val
+      }
+      continue
+    }
+    if (Object.hasOwnProperty.call(config, prop)) {
+      props[prop] = val
+    }
+  }
+  
+  return createElement(type, key, ref, props)
+}
