@@ -1,6 +1,7 @@
 import { createInstance } from "hostConfig"
 import { FiberNode } from "./fiber"
 import { HostComponent, HostRoot, HostText } from "./workTags"
+import { NoFlags } from "./fiberFlags"
 
 // 构建离屏 DOM树
 export function completeWork(wip: FiberNode) {
@@ -18,6 +19,7 @@ export function completeWork(wip: FiberNode) {
         appendAllChildren(instance, wip)
         wip.stateNode = instance
       }
+      bubbbleProperties(wip)
       return null
     }
     case HostText: {
@@ -29,9 +31,11 @@ export function completeWork(wip: FiberNode) {
         const instance = createInstance(newProps.content)
         wip.stateNode = instance
       }
+      bubbbleProperties(wip)
       return null
     }
     case HostRoot:
+      bubbbleProperties(wip)
       return null
     default:
       console.log("未处理的completeWork 类型", wip)
@@ -77,4 +81,18 @@ function appendAllChildren(instance: Element, wip: FiberNode) {
     node.sibling.return = node.return
     node = node.sibling
   }
+}
+
+function bubbbleProperties(wip: FiberNode) {
+  let subtreeFlags = NoFlags
+  let child = wip.child
+  while (child !== null) {
+    subtreeFlags |= child.subtreeFlags
+    subtreeFlags |= child.flags
+
+    child.return = wip
+    child = child.sibling
+  }
+
+  wip.subtreeFlags = subtreeFlags
 }

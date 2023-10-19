@@ -1,7 +1,9 @@
 import { FiberNode, FiberRootNode, createWorkInProgress } from "./fiber"
 import { beginWork } from "./beginWork"
-import { completeWork } from './completeWork'
+import { completeWork } from "./completeWork"
 import { HostRoot } from "./workTags"
+import { MutationMask, NoFlags } from "./fiberFlags"
+import { commitMutationEffects } from "./commitWork"
 let workInProgress: FiberNode | null = null
 
 function prepareFreshStack(root: FiberRootNode) {
@@ -18,7 +20,7 @@ export function scheduleUpdateOnFiber(fiber: FiberNode) {
 function markUpdateFromFiberToRoot(fiber: FiberNode) {
   let node = fiber
   let parent = fiber.return
-  while(parent !== null) {
+  while (parent !== null) {
     node = parent
     parent = node.return
   }
@@ -39,6 +41,37 @@ function renderRoot(root: FiberRootNode) {
       workInProgress = null
     }
   } while (true)
+
+  const finishedWork = root.current.alternate
+  root.finishedWork = finishedWork
+
+  // wip fiberNode 树  中的flags
+  commitRoot(root)
+}
+
+function commitRoot(root: FiberRootNode) {
+  const finishedWork = root.finishedWork
+
+  if (finishedWork === null) return
+
+  // 重置
+  root.finishedWork = null
+
+  // 判断是否存在3个阶段需要执行的操作
+  // root flags  subtreeFlags
+  const subtreeHasEffect =
+    (finishedWork.subtreeFlags & MutationMask) !== NoFlags
+  const rootHasEffect = (finishedWork.subtreeFlags & MutationMask) !== NoFlags
+
+  if (subtreeHasEffect || rootHasEffect) {
+    // beforeMutation
+    // mutation
+    commitMutationEffects(finishedWork)
+    // layout
+    root.current = finishedWork
+  } else {
+    root.current = finishedWork
+  }
 }
 
 function workLoop() {
