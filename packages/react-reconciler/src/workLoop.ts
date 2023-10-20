@@ -31,6 +31,7 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
 }
 
 function renderRoot(root: FiberRootNode) {
+  // 创建 调度 开始的 workInProgress
   prepareFreshStack(root)
   do {
     try {
@@ -81,10 +82,13 @@ function workLoop() {
 }
 
 function performUnitOfWork(fiber: FiberNode) {
+  // 从头 至尾  构建每一个节点的fiber节点 并计算最新属性
   const next = beginWork(fiber)
   fiber.memoizedProps = fiber.pendingProps
-
+  
   if (next === null) {
+    // 完成该节点 创建该fiber的DOM节点 并构建一条 离屏DOM树
+    // 完成该节点后 继续创建该节点的兄弟节点 若已不存在兄弟节点 向上回溯
     completeUnitOfWork(fiber)
   } else {
     workInProgress = next
