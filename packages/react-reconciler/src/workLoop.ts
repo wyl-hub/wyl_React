@@ -51,6 +51,7 @@ function renderRoot(root: FiberRootNode) {
 }
 
 function commitRoot(root: FiberRootNode) {
+  console.log('commitRoot')
   const finishedWork = root.finishedWork
 
   if (finishedWork === null) return

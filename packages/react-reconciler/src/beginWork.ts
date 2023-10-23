@@ -6,6 +6,7 @@ import { reconcileChildFibers, mountChildFibers } from "./childFibers"
 
 // 计算该节点的最新值  and 创建 子 fiberNode
 export function beginWork(wip: FiberNode) {
+  console.log('begin work')
   switch (wip.tag) {
     case HostRoot:
       return updateHostRoot(wip)

@@ -1,10 +1,11 @@
-import { createInstance } from "hostConfig"
+import { createInstance, createTextInstance } from "hostConfig"
 import { FiberNode } from "./fiber"
 import { HostComponent, HostRoot, HostText } from "./workTags"
 import { NoFlags } from "./fiberFlags"
 
 // 构建离屏 DOM树
 export function completeWork(wip: FiberNode) {
+  console.log('complete work')
   const newProps = wip.pendingProps
   const current = wip.alternate
   switch (wip.tag) {
@@ -28,7 +29,7 @@ export function completeWork(wip: FiberNode) {
       } else {
         // mount
         // 1. 构建DOM
-        const instance = createInstance(newProps.content)
+        const instance = createTextInstance(newProps.content)
         wip.stateNode = instance
       }
       bubbbleProperties(wip)

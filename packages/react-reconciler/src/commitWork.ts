@@ -5,9 +5,10 @@ import { HostComponent, HostRoot, HostText } from "./workTags"
 
 let nextEffect: FiberNode | null = null
 export const commitMutationEffects = (finishedWork: FiberNode) => {
+  console.log("commitMutationEffects", finishedWork)
   nextEffect = finishedWork
-  let child = nextEffect.child
   while (nextEffect !== null) {
+    const child: FiberNode | null = nextEffect.child
     if (
       (nextEffect.subtreeFlags & MutationMask) !== NoFlags &&
       child !== null
@@ -40,14 +41,17 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
 }
 
 const commitPlacement = (finishedWork: FiberNode) => {
-  console.log('执行 Placement')
+  console.log("执行 Placement")
   const hostParent = getHostParent(finishedWork)
+  if (hostParent !== null) {
+    appendPlacementNodeIntoContainer(finishedWork, hostParent)
+  }
 }
 
 // 获取父级DOM类型的fiber
 function getHostParent(fiber: FiberNode) {
   let parent = fiber.return
-  while(parent) {
+  while (parent) {
     const parentTag = parent.tag
     if (parentTag === HostComponent) {
       return parent.stateNode
@@ -55,9 +59,11 @@ function getHostParent(fiber: FiberNode) {
     if (parentTag === HostRoot) {
       return (parent.stateNode as FiberRootNode).container
     }
+    parent = parent.return
   }
 
-  console.log('没有找到父级DOM fiber', fiber)
+  console.log("没有找到父级DOM fiber", fiber)
+  return null
 }
 
 function appendPlacementNodeIntoContainer(
@@ -65,14 +71,14 @@ function appendPlacementNodeIntoContainer(
   hostParent: Container
 ) {
   if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-    appendChildToContainer(finishedWork.stateNode, hostParent)
+    appendChildToContainer(hostParent, finishedWork.stateNode)
     return
   }
   const child = finishedWork.child
   if (child !== null) {
     appendPlacementNodeIntoContainer(child, hostParent)
     let sibling = child.sibling
-    while(sibling !== null) {
+    while (sibling !== null) {
       appendPlacementNodeIntoContainer(sibling, hostParent)
       sibling = sibling.sibling
     }
