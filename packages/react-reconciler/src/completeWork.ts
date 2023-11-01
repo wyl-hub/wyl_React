@@ -1,6 +1,6 @@
 import { createInstance, createTextInstance } from "hostConfig"
 import { FiberNode } from "./fiber"
-import { HostComponent, HostRoot, HostText } from "./workTags"
+import { FunctionComponent, HostComponent, HostRoot, HostText } from "./workTags"
 import { NoFlags } from "./fiberFlags"
 
 // 构建离屏 DOM树
@@ -38,6 +38,10 @@ export function completeWork(wip: FiberNode) {
     case HostRoot:
       bubbbleProperties(wip)
       return null
+    case FunctionComponent: {
+      bubbbleProperties(wip)
+      return null
+    }
     default:
       console.log("未处理的completeWork 类型", wip)
       break
@@ -50,6 +54,7 @@ function appendAllChildren(instance: Element, wip: FiberNode) {
   while (node !== null) {
     // 从wipfiber 向 子fiber查找 找到第一个 DOM类型的fiber 插入到当前fiber DOM节点下
     if (node.tag === HostComponent || node.tag === HostText) {
+      instance.appendChild(node.stateNode)
       // 插入DOM
     } else if (node.child !== null) {
       // 继续向下查找
