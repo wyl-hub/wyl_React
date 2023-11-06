@@ -5,12 +5,16 @@
   "main": "index.js",
   "scripts": {
     "build:dev": "rimraf dist && rollup --bundleConfigAsCjs --config scripts/rollup/dev.config.js",
-    "demo": "vite serve demo/src --force --config scripts/vite/vite.config.js"
+    "demo": "vite serve demo/src --force --config scripts/vite/vite.config.js",
+    "test": "jest --config scripts/jest/jest.config.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.23.2",
+    "@babel/plugin-transform-react-jsx": "^7.22.15",
+    "@babel/preset-env": "^7.23.2",
     "@rollup/plugin-alias": "^5.0.1",
     "@rollup/plugin-commonjs": "^25.0.5",
     "@types/react": "^18.2.15",

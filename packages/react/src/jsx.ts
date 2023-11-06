@@ -65,10 +65,7 @@ export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
   return createElement(type, key, ref, props)
 }
 
-export const jsxDEV = (
-  type: ElementType,
-  config: any,
-) => {
+export const jsxDEV = (type: ElementType, config: any) => {
   let key: Key = null
   const props: Props = {}
   let ref: Ref = null
@@ -92,6 +89,14 @@ export const jsxDEV = (
       props[prop] = val
     }
   }
-  
+
   return createElement(type, key, ref, props)
+}
+
+export function isValidElement(object: any) {
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    object.$$typeof === REACT_ELEMENT_TYPE
+  )
 }

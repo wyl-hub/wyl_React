@@ -1,7 +1,11 @@
 import { createInstance, createTextInstance } from "hostConfig"
 import { FiberNode } from "./fiber"
 import { FunctionComponent, HostComponent, HostRoot, HostText } from "./workTags"
-import { NoFlags } from "./fiberFlags"
+import { NoFlags, Update } from "./fiberFlags"
+
+function markUpdate(fiber: FiberNode) {
+  fiber.flags |= Update
+}
 
 // 构建离屏 DOM树
 export function completeWork(wip: FiberNode) {
@@ -26,6 +30,11 @@ export function completeWork(wip: FiberNode) {
     case HostText: {
       // update
       if (current !== null && wip.stateNode) {
+        const oldText = current.memoizedProps.content
+        const newText = newProps.content
+        if (oldText !== newText) {
+          markUpdate(wip)
+        }
       } else {
         // mount
         // 1. 构建DOM
