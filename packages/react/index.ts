@@ -16,3 +16,5 @@ export const XXXX = {
 export const version = '0.0.0'
 export const createElement = jsx
 export const isValidElement = isValidElementFn
+
+export default {}

@@ -64,14 +64,17 @@ function mountState<State>(
   // 找到当前useState 对应的hook
   const hook = mountWorkInProgressHook()
   let memoizedState
+  // 计算 useState 初始值
   if (initialState instanceof Function) {
     memoizedState = initialState()
   } else {
     memoizedState = initialState
   }
-
+  
+  // 初始化 该 hook 更新链表
   const queue = createUpdateQueue<State>()
   hook.updateQueue = queue
+  // 保存 mount useState 初始值
   hook.memoizedState = memoizedState
   // @ts-ignore
   const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue)

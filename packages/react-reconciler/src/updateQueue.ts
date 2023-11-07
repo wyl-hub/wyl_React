@@ -8,22 +8,22 @@ export interface Update<State> {
 export interface UpdateQueue<State> {
   shared: {
     pending: Update<State> | null
-  },
+  }
   dispatch: Dispatch<State> | null
 }
 
 export const createUpdate = <State>(action: Action<State>): Update<State> => {
   return {
-    action
+    action,
   }
 }
 
 export const createUpdateQueue = <State>() => {
   return {
     shared: {
-      pending: null
+      pending: null,
     },
-    dispatch: null
+    dispatch: null,
   } as UpdateQueue<State>
 }
 
@@ -38,12 +38,16 @@ export const processUpdateQueue = <State>(
   baseState: State,
   pendingUpdate: Update<State> | null
 ): { memoizedState: State | undefined } => {
-  const result: ReturnType<typeof processUpdateQueue<State>> = { memoizedState: baseState }
+  const result: ReturnType<typeof processUpdateQueue<State>> = {
+    memoizedState: baseState,
+  }
   const action = pendingUpdate?.action
-  if (action instanceof Function) {
-    result.memoizedState = action(baseState)
-  } else {
-    result.memoizedState = action
+  if (action) {
+    if (action instanceof Function) {
+      result.memoizedState = action(baseState)
+    } else {
+      result.memoizedState = action
+    }
   }
   return result
 }

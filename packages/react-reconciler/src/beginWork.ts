@@ -34,8 +34,8 @@ function updateHostRoot(wip: FiberNode) {
   const updateQueue = wip.updateQueue as UpdateQueue<Element>
   const pending = updateQueue.shared.pending
   updateQueue.shared.pending = null
-  const { memorizedState } = processUpdateQueue(baseState, pending)
-  wip.memoizedState = memorizedState
+  const { memoizedState } = processUpdateQueue(baseState, pending)
+  wip.memoizedState = memoizedState
 
   const nextChildren = wip.memoizedState
   reconcileChilren(wip, nextChildren)
