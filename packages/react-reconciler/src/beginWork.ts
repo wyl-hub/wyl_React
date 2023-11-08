@@ -33,6 +33,7 @@ function updateHostRoot(wip: FiberNode) {
   const baseState = wip.memoizedState
   const updateQueue = wip.updateQueue as UpdateQueue<Element>
   const pending = updateQueue.shared.pending
+  // 重置更新
   updateQueue.shared.pending = null
   const { memoizedState } = processUpdateQueue(baseState, pending)
   wip.memoizedState = memoizedState
@@ -52,6 +53,8 @@ function updateHostComponent(wip: FiberNode) {
 }
 
 function updateFunctionComponent(wip: FiberNode) {
+  // 函数组件  构建该函数组件fiber的hooks链表  （mount 和 update 时 hooks方法的不同实现）
+  // 并执行该函数  获取 UI
   const nextChildren = renderWithHooks(wip)
   reconcileChilren(wip, nextChildren)
 
@@ -59,6 +62,7 @@ function updateFunctionComponent(wip: FiberNode) {
 }
 
 function reconcileChilren(wip: FiberNode, children?: ReactElement) {
+  // 根据对应的上一颗fiber树 构建对应的新的fiber树  （双缓存）
   const current = wip.alternate
   if (current !== null) {
     // update

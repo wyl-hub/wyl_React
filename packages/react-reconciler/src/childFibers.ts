@@ -17,7 +17,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       deletions.push(childToDelete)
     }
   }
-  // 根据element 创建 fiber
+  // 根据React element 创建 fiber
   function reconcileSingleElement(
     returnFiber: FiberNode,
     currentFiber: FiberNode | null,
@@ -45,6 +45,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
         deleteChild(returnFiber, currentFiber)
       }
     }
+    // 不能复用 创建新的fiber
     const fiber = createFiberFromElement(element)
     fiber.return = returnFiber
     return fiber

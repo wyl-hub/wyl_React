@@ -65,6 +65,7 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
   }
 }
 
+// 删除fiber节点
 function commitDeletion(childToDelete: FiberNode) {
   let rootHostNode: FiberNode | null = null
   // 递归子树
@@ -125,8 +126,10 @@ function commitNestedComponent(
   }
 }
 
+// 插入操作
 const commitPlacement = (finishedWork: FiberNode) => {
   console.log("执行 Placement")
+  // 获取该fiber节点的
   const hostParent = getHostParent(finishedWork)
   if (hostParent !== null) {
     appendPlacementNodeIntoContainer(finishedWork, hostParent)

@@ -12,7 +12,7 @@ function prepareFreshStack(root: FiberRootNode) {
 
 export function scheduleUpdateOnFiber(fiber: FiberNode) {
   // 调度功能
-  // 获取fiberRootNode
+  // 获取 fiberRootNode
   const root = markUpdateFromFiberToRoot(fiber)
   renderRoot(root)
 }
@@ -31,7 +31,7 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
 }
 
 function renderRoot(root: FiberRootNode) {
-  // 创建 调度 开始的 workInProgress
+  // 创建 调度 开始的 workInProgress (双缓存 fiber树)
   prepareFreshStack(root)
   do {
     try {
