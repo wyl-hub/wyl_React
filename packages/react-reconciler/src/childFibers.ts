@@ -1,5 +1,9 @@
 import { Props, ReactElement } from "shared/ReactTypes"
-import { FiberNode, createFiberFromElement, createWorkInProgress } from "./fiber"
+import {
+  FiberNode,
+  createFiberFromElement,
+  createWorkInProgress,
+} from "./fiber"
 import { REACT_ELEMENT_TYPE } from "shared/ReactSymbols"
 import { HostText } from "./workTags"
 import { ChildDeletion, Placement } from "./fiberFlags"
@@ -17,32 +21,54 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       deletions.push(childToDelete)
     }
   }
+  // 将该节点及其兄弟节点都标记删除
+  function deleteRemainingChildren(
+    returnFiber: FiberNode,
+    currentFirstChild: FiberNode | null
+  ) {
+    if (!shouldTrackEffects) {
+      return
+    }
+    let childToDelete = currentFirstChild
+    while (childToDelete !== null) {
+      deleteChild(returnFiber, childToDelete)
+      childToDelete = childToDelete.sibling
+    }
+  }
+  // 单节点 diff   旧fiber 与 新 children(ReactElement) 的比较
+  // 新chidren为 单节点
   // 根据React element 创建 fiber
   function reconcileSingleElement(
     returnFiber: FiberNode,
-    currentFiber: FiberNode | null,
+    currentFirstChild: FiberNode | null,
     element: ReactElement
   ) {
     const key = element.key
-    if (currentFiber !== null) {
+    let child = currentFirstChild
+    while (child !== null) {
       // update
-      // key 是否相同
-      if (currentFiber.key === key) {
+      // key 是否相同 如果key相同 后续节点就不需要比较了
+      // *** key type 相同  复用    key相同 type不相同 则都不能复用 ***
+      if (child.key === key) {
         if (element.$$typeof === REACT_ELEMENT_TYPE) {
-          if (currentFiber.type === element.type) {
+          if (child.type === element.type) {
             // type 相同 可以复用
-            const existing = useFiber(currentFiber, element.props)
+            const existing = useFiber(child, element.props)
             existing.return = returnFiber
+            // 标记剩下节点删除
+            deleteRemainingChildren(returnFiber, child.sibling)
             return existing
           }
-          // type 不相同  删除旧节点    （key 都为null 也满足key相同）
-          deleteChild(returnFiber, currentFiber)
+          // key 相同 type 不同 没有可复用节点 删除所有旧节点
+          deleteRemainingChildren(returnFiber, child)
         } else {
           console.log("还未实现的react类型", element)
         }
+        break
       } else {
-        // key 不相同  删掉旧节点
-        deleteChild(returnFiber, currentFiber)
+        // key 不同  删掉该旧节点（继续遍历sibling 找到是否有key相同且可复用的旧节点）
+        deleteChild(returnFiber, child)
+        child = child.sibling
       }
     }
     // 不能复用 创建新的fiber
@@ -54,18 +80,21 @@ function ChildReconciler(shouldTrackEffects: boolean) {
   // 创建文本fiber
   function reconcileSingleTextNode(
     returnFiber: FiberNode,
-    currentFiber: FiberNode | null,
+    currentFirstChild: FiberNode | null,
     content: string | number
   ) {
-    if (currentFiber !== null) {
+    let child = currentFirstChild
+    while (child !== null) {
       // update
-      if (currentFiber.tag === HostText) {
+      if (child.tag === HostText) {
         // 类型没变 可以复用
-        const existing = useFiber(currentFiber, { content })
+        const existing = useFiber(child, { content })
         existing.return = returnFiber
+        deleteRemainingChildren(returnFiber, child.sibling)
         return existing
       }
-      deleteChild(returnFiber, currentFiber)
+      deleteChild(returnFiber, child)
+      child = child.sibling
     }
     const fiber = new FiberNode(HostText, { content }, null)
     fiber.return = returnFiber
