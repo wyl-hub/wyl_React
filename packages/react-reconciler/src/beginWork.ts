@@ -2,6 +2,7 @@ import { ReactElement } from "shared/ReactTypes"
 import { FiberNode } from "./fiber"
 import { UpdateQueue, processUpdateQueue } from "./updateQueue"
 import {
+  Fragment,
   FunctionComponent,
   HostComponent,
   HostRoot,
@@ -22,6 +23,8 @@ export function beginWork(wip: FiberNode) {
       return null
     case FunctionComponent:
       return updateFunctionComponent(wip)
+    case Fragment:
+      return updateFragment(wip)
     default:
       console.warn("beginwork 未实现的类型", wip.tag)
       break
@@ -56,6 +59,13 @@ function updateFunctionComponent(wip: FiberNode) {
   // 函数组件  构建该函数组件fiber的hooks链表  （mount 和 update 时 hooks方法的不同实现）
   // 并执行该函数  获取 UI
   const nextChildren = renderWithHooks(wip)
+  reconcileChilren(wip, nextChildren)
+
+  return wip.child
+}
+
+function updateFragment(wip: FiberNode) {
+  const nextChildren = wip.pendingProps
   reconcileChilren(wip, nextChildren)
 
   return wip.child

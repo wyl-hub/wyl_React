@@ -72,22 +72,37 @@ const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
   }
 }
 
+function recordHostChildrenToDelete(
+  childrenToDelete: FiberNode[],
+  unmountFiber: FiberNode
+) {
+  let lastOne = childrenToDelete[childrenToDelete.length - 1]
+  if (!lastOne) {
+    childrenToDelete.push(unmountFiber)
+  } else {
+    let node = lastOne.sibling
+    while (node !== null) {
+      if (unmountFiber === node) {
+        childrenToDelete.push(unmountFiber)
+      }
+      node = node.sibling
+    }
+  }
+}
+
 // 删除fiber节点
 function commitDeletion(childToDelete: FiberNode) {
-  let rootHostNode: FiberNode | null = null
+  const rootChildrenToDelete: FiberNode[] = []
+
   // 递归子树
   commitNestedComponent(childToDelete, (unmountFiber) => {
     switch (unmountFiber.tag) {
       case HostComponent:
-        if (rootHostNode === null) {
-          rootHostNode = unmountFiber
-        }
+        recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber)
         // 解绑ref
         return
       case HostText:
-        if (rootHostNode === null) {
-          rootHostNode = unmountFiber
-        }
+        recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber)
         return
       case FunctionComponent:
         // useEffect unmount
@@ -97,10 +112,12 @@ function commitDeletion(childToDelete: FiberNode) {
     }
   })
   // 移除 rootHostNode 的 DOM
-  if (rootHostNode !== null) {
-    const hostParent = getHostParent(rootHostNode)
+  if (rootChildrenToDelete.length) {
+    const hostParent = getHostParent(childToDelete)
     if (hostParent !== null) {
-      removeChild((rootHostNode as FiberNode).stateNode, hostParent)
+      rootChildrenToDelete.forEach((node) => {
+        removeChild(node.stateNode, hostParent)
+      })
     }
   }
   childToDelete.return = null
@@ -140,17 +157,21 @@ const commitPlacement = (finishedWork: FiberNode) => {
   const hostParent = getHostParent(finishedWork)
   const hostSibling = getHostSibling(finishedWork)
   if (hostParent !== null) {
-    insertOrAppendPlacementNodeIntoContainer(finishedWork, hostParent, hostSibling)
+    insertOrAppendPlacementNodeIntoContainer(
+      finishedWork,
+      hostParent,
+      hostSibling
+    )
   }
 }
 
-// 例子: 将App 插入到 div 之前  所以需要找到div DOM 
+// 例子: 将App 插入到 div 之前  所以需要找到div DOM
 // <App /> =   <p></p>
 // <div>
 //   <App />
 //   <div></div>
 // </div>
- 
+
 function getHostSibling(fiber: FiberNode) {
   let node = fiber
   findSibling: while (true) {

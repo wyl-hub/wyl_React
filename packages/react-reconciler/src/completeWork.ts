@@ -1,6 +1,12 @@
 import { createInstance, createTextInstance } from "hostConfig"
 import { FiberNode } from "./fiber"
-import { FunctionComponent, HostComponent, HostRoot, HostText } from "./workTags"
+import {
+  Fragment,
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from "./workTags"
 import { NoFlags, Update } from "./fiberFlags"
 import { updateFiberProps } from "react-dom/src/SyntheticEvent"
 
@@ -10,7 +16,7 @@ function markUpdate(fiber: FiberNode) {
 
 // 构建离屏 DOM树
 export function completeWork(wip: FiberNode) {
-  console.log('complete work')
+  console.log("complete work")
   const newProps = wip.pendingProps
   const current = wip.alternate
   switch (wip.tag) {
@@ -48,12 +54,10 @@ export function completeWork(wip: FiberNode) {
       return null
     }
     case HostRoot:
+    case FunctionComponent:
+    case Fragment:
       bubbbleProperties(wip)
       return null
-    case FunctionComponent: {
-      bubbbleProperties(wip)
-      return null
-    }
     default:
       console.log("未处理的completeWork 类型", wip)
       break

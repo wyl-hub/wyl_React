@@ -2,10 +2,11 @@ import { Props, ReactElement } from "shared/ReactTypes"
 import {
   FiberNode,
   createFiberFromElement,
+  createFiberFromFragment,
   createWorkInProgress,
 } from "./fiber"
-import { REACT_ELEMENT_TYPE } from "shared/ReactSymbols"
-import { HostText } from "./workTags"
+import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from "shared/ReactSymbols"
+import { Fragment, HostText } from "./workTags"
 import { ChildDeletion, Placement } from "./fiberFlags"
 
 type ExistingChildren = Map<string | number, FiberNode>
@@ -54,6 +55,10 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       if (child.key === key) {
         if (element.$$typeof === REACT_ELEMENT_TYPE) {
           if (child.type === element.type) {
+            let props = element.props
+            if (element.type === REACT_FRAGMENT_TYPE) {
+              props = element.props.children
+            }
             // type 相同 可以复用
             const existing = useFiber(child, element.props)
             existing.return = returnFiber
@@ -61,11 +66,11 @@ function ChildReconciler(shouldTrackEffects: boolean) {
             deleteRemainingChildren(returnFiber, child.sibling)
             return existing
           }
-          // key 相同 type 不同 没有可复用节点 删除所有旧节点
-          deleteRemainingChildren(returnFiber, child)
         } else {
           console.log("还未实现的react类型", element)
         }
+        // key 相同 type 不同 没有可复用节点 删除所有旧节点
+        deleteRemainingChildren(returnFiber, child)
         break
       } else {
         // key 不同  删掉该旧节点（继续遍历sibling 找到是否有key相同且可复用的旧节点）
@@ -74,7 +79,12 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       }
     }
     // 不能复用 创建新的fiber
-    const fiber = createFiberFromElement(element)
+    let fiber
+    if (element.type === REACT_FRAGMENT_TYPE) {
+      fiber = createFiberFromFragment(element.props.children, key)
+    } else {
+      fiber = createFiberFromElement(element)
+    }
     fiber.return = returnFiber
     return fiber
   }
@@ -157,8 +167,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 
       // 所以 如果 A B C D   ->   D A B C  (即使 ABC 顺序与之前一样   也只有D不动 A B C 都需要移动到后面)
 
-
-      // A B C D   ->   B D E C A 
+      // A B C D   ->   B D E C A
       // lastPlacedIndex = 0
       // 1. B oldIndex = 1  1 > 0   = 1
       // 2. D oldIndex = 3  3 > 1   = 3
@@ -182,7 +191,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     }
 
     // 4. 将 map 中剩下的标记删除(剩下的代表不能复用的旧fiber)
-    existingChildren.forEach(fiber => {
+    existingChildren.forEach((fiber) => {
       deleteChild(returnFiber, fiber)
     })
 
@@ -196,7 +205,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     element: any
   ): FiberNode | null {
     const keyToUse = element.key !== null ? element.key : index
-    const before = existingChildren.get(keyToUse)
+    const before = existingChildren.get(keyToUse) || null
 
     // HostText
     if (typeof element === "string" || typeof element === "number") {
@@ -213,6 +222,16 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     if (typeof element === "object" && element !== null) {
       switch (element.$$typeof) {
         case REACT_ELEMENT_TYPE:
+          // fragment
+          if (element.type === REACT_FRAGMENT_TYPE) {
+            return updateFragment(
+              returnFiber,
+              before,
+              element,
+              keyToUse,
+              existingChildren
+            )
+          }
           if (before) {
             if (before.type === element.type) {
               existingChildren.delete(keyToUse)
@@ -221,19 +240,36 @@ function ChildReconciler(shouldTrackEffects: boolean) {
           }
           return createFiberFromElement(element)
       }
+    }
 
-      // 数组类型
-      if (Array.isArray(element)) {
-        console.log('数组类型还未实现')
-      }
+    // Array
+    if (Array.isArray(element)) {
+      return updateFragment(
+        returnFiber,
+        before,
+        element,
+        keyToUse,
+        existingChildren
+      )
     }
     return null
   }
   return function reconcileChildFibers(
     returnFiber: FiberNode,
     currentFiber: FiberNode | null,
-    newChild?: ReactElement
+    newChild?: any
   ) {
+    // 判断 fragment
+    const isUnkeyedTopLevelFragment =
+      typeof newChild === "object" &&
+      newChild !== null &&
+      newChild.type === REACT_FRAGMENT_TYPE &&
+      newChild.key === null
+
+    if (isUnkeyedTopLevelFragment) {
+      newChild = newChild?.props.children
+    }
+
     // 判断当前fiber的类型
     if (typeof newChild === "object" && newChild !== null) {
       switch (newChild.$$typeof) {
@@ -242,7 +278,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
             reconcileSingleElement(returnFiber, currentFiber, newChild)
           )
         default:
-          console.log("未实现的reconcile类型", newChild)
+          console.log("非REACT_ELEMENT_TYPE", newChild)
           break
       }
       // 多节点情况
@@ -258,9 +294,33 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       )
     }
 
+    if (currentFiber !== null) {
+      // 兜底删除
+      deleteRemainingChildren(returnFiber, currentFiber)
+    }
+
     console.log("未实现的reconcile类型", newChild)
     return null
   }
+}
+
+function updateFragment(
+  returnFiber: FiberNode,
+  current: FiberNode | null,
+  elements: any[],
+  key: any,
+  existingChildren: ExistingChildren
+) {
+  let fiber
+  // 没有找到可复用 fragment fiber 节点 创建 新 fragment fiber
+  if (!current || current.tag !== Fragment) {
+    fiber = createFiberFromFragment(elements, key)
+  } else {
+    existingChildren.delete(key)
+    fiber = useFiber(current, elements)
+  }
+  fiber.return = returnFiber
+  return fiber
 }
 
 function useFiber(fiber: FiberNode, pendingProps: Props): FiberNode {

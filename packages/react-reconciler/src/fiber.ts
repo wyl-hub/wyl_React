@@ -1,5 +1,5 @@
 import { Props, Key, Ref, ReactElement } from "shared/ReactTypes"
-import { FunctionComponent, HostComponent, WorkTag } from "./workTags"
+import { Fragment, FunctionComponent, HostComponent, WorkTag } from "./workTags"
 import { Flags, NoFlags } from "./fiberFlags"
 import { Container } from "hostConfig"
 export class FiberNode {
@@ -100,5 +100,10 @@ export function createFiberFromElement(element: ReactElement) {
 
   const fiber = new FiberNode(fiberTag, props, key)
   fiber.type = type
+  return fiber
+}
+
+export function createFiberFromFragment(elements: any[], key: Key) {
+  const fiber = new FiberNode(Fragment, elements, key)
   return fiber
 }
