@@ -1,4 +1,11 @@
-import { Container, appendChildToContainer, commitUpdate, removeChild } from "hostConfig"
+import {
+  Container,
+  Instance,
+  appendChildToContainer,
+  commitUpdate,
+  insertChildToContainer,
+  removeChild,
+} from "hostConfig"
 import { FiberNode, FiberRootNode } from "./fiber"
 import {
   ChildDeletion,
@@ -131,8 +138,52 @@ const commitPlacement = (finishedWork: FiberNode) => {
   console.log("执行 Placement")
   // 获取该fiber节点的
   const hostParent = getHostParent(finishedWork)
+  const hostSibling = getHostSibling(finishedWork)
   if (hostParent !== null) {
-    appendPlacementNodeIntoContainer(finishedWork, hostParent)
+    insertOrAppendPlacementNodeIntoContainer(finishedWork, hostParent, hostSibling)
+  }
+}
+
+// 例子: 将App 插入到 div 之前  所以需要找到div DOM 
+// <App /> =   <p></p>
+// <div>
+//   <App />
+//   <div></div>
+// </div>
+ 
+function getHostSibling(fiber: FiberNode) {
+  let node = fiber
+  findSibling: while (true) {
+    while (node.sibling === null) {
+      const parent = node.return
+      if (
+        parent === null ||
+        parent.tag === HostComponent ||
+        parent.tag === HostRoot
+      ) {
+        return null
+      }
+      node = parent
+    }
+    node.sibling.return = node.return
+    node = node.sibling
+
+    while (node.tag !== HostText && node.tag !== HostComponent) {
+      // 向下遍历
+      // 跳过不稳定节点
+      if ((node.flags & Placement) !== NoFlags) continue findSibling
+
+      if (node.child === null) {
+        continue findSibling
+      } else {
+        node.child.return = node
+        node = node.child
+      }
+    }
+
+    if ((node.flags & Placement) === NoFlags) {
+      return node.stateNode
+    }
   }
 }
 
@@ -154,20 +205,25 @@ function getHostParent(fiber: FiberNode) {
   return null
 }
 
-function appendPlacementNodeIntoContainer(
+function insertOrAppendPlacementNodeIntoContainer(
   finishedWork: FiberNode,
-  hostParent: Container
+  hostParent: Container,
+  before?: Instance
 ) {
   if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-    appendChildToContainer(hostParent, finishedWork.stateNode)
+    if (before) {
+      insertChildToContainer(finishedWork.stateNode, hostParent, before)
+    } else {
+      appendChildToContainer(hostParent, finishedWork.stateNode)
+    }
     return
   }
   const child = finishedWork.child
   if (child !== null) {
-    appendPlacementNodeIntoContainer(child, hostParent)
+    insertOrAppendPlacementNodeIntoContainer(child, hostParent)
     let sibling = child.sibling
     while (sibling !== null) {
-      appendPlacementNodeIntoContainer(sibling, hostParent)
+      insertOrAppendPlacementNodeIntoContainer(sibling, hostParent)
       sibling = sibling.sibling
     }
   }

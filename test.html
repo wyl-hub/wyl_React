@@ -6,14 +6,21 @@
   <title>Document</title>
 </head>
 <body>
+  <ul id="ul">
+    <li id="A">A</li>
+    <li id="B">B</li>
+    <li id="C">C</li>
+    <li id="D">D</li>
+  </ul>
+  <button onclick="move()">click move</button>
   <script>
-    function test() {
-      console.log('xxx')
+    function move() {
+      const child = document.getElementById('ul').children[0]
+      const id = child.id
+      if (id === 'D') return
+      const parent = document.getElementById('ul')
+      parent.appendChild(child)
     }
-    const obj = {
-      name: 'wxl'
-    }
-    console.info('obj', obj.prototype)
   </script>
 </body>
 </html>
