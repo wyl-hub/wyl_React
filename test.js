@@ -1,3 +1,5 @@
-const list = ['a', 'b']
+const obj = {
+}
 
-console.log(typeof list)
+const str = JSON.stringify(obj)
+console.log(str)

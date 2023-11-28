@@ -6,20 +6,17 @@
   <title>Document</title>
 </head>
 <body>
-  <ul id="ul">
-    <li id="A">A</li>
-    <li id="B">B</li>
-    <li id="C">C</li>
-    <li id="D">D</li>
-  </ul>
-  <button onclick="move()">click move</button>
+  <input id="test" type="text">
+  <button onclick="print()">click</button>
+  <button onclick="xclear()">clear</button>
   <script>
-    function move() {
-      const child = document.getElementById('ul').children[0]
-      const id = child.id
-      if (id === 'D') return
-      const parent = document.getElementById('ul')
-      parent.appendChild(child)
+    function print() {
+      const el = document.getElementById('test')
+      console.log('el', el.value)
+    }
+    function xclear() {
+      const el = document.getElementById('test')
+      el.value = ''
     }
   </script>
 </body>
